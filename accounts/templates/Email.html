@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}"/>
+</head>
+<body>
+<div>
+        <h1>Django Mail App</h1>
+
+        <form method="post">
+            {% csrf_token %}
+            <label for="address">To:</label>
+            <input id="address" type="email" name="address"/>
+
+            <label for="subject">Subject:</label>
+            <input id="subject" name="subject"/>
+
+            <label for="message">Message:</label><br>
+            <textarea id="message" name="message"></textarea>
+
+            <input type="submit">
+        </form>
+        <p>{{ result }}</p>
+    </div>
+
+</body>
+</html>
