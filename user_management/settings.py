@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os.path
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
+from celery.schedules import crontab
 
 import sentry_sdk
 
@@ -40,7 +42,6 @@ SECRET_KEY = 'django-insecure-##zm*^ibf8z^p5-j2+s36z7l5s2cn+-d+&i^q(zm1vrch8!j+#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -54,9 +55,40 @@ INSTALLED_APPS = [
     'rest_framework',
     'accounts',
     'rest_framework.authtoken',
-    'cards',
+    'card',
+    'corsheaders',
+    'django_celery_beat',
 
 ]
+
+#CELERY
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+CELERY_BEAT_SCHEDULE = {
+    'schedule-notification': {
+        'task': 'accounts.tasks.schedule_notification',
+        'schedule': 10.0,
+        # 'schedule': crontab(minute='*/1'),
+
+    },
+}
+# CELERY_BEAT_SCHEDULE = {
+#     'check-cccd-expiry': {
+#         'task': 'accounts.task.schedule_notification',
+#         'schedule': timedelta(days=1)
+#     },
+# }
+# CELERY_BEAT_SCHEDULE = {
+#     'daily-task-at-8am': {
+#         'task': 'accounts.task.schedule_notification',
+#         'schedule': crontab(hour=8, minute=0),  # Chạy lúc 08:00 mỗi ngày
+#     },
+# }
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -66,6 +98,20 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware'
+
+]
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # Django's default backend
+)
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngrok-skip-browser-warning',
 ]
 
 
@@ -167,20 +213,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_L10N = True
-
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_TZ = True
+USE_I18N = True
+USE_L10N = True
+ALLOWED_HOSTS = ['*']
+
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR),"media_root")
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 

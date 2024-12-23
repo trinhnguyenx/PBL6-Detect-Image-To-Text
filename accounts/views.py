@@ -1,20 +1,22 @@
 
-from django.http import BadHeaderError
-from django.contrib.auth import authenticate
+from django.http import BadHeaderError, HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.core.mail import send_mail
 from django.conf import settings
-
-from .models import CustomUser
-from .serializer import CustomUserSerializer, SendMailSerializer
-
-
+from .models import CustomUser, Notification
+from .serializer import CustomUserSerializer, SendMailSerializer, NotificationSerializer
+from django.contrib.auth.hashers import check_password
+from card.models import CCCDCard
+from io import BytesIO
+import qrcode
+from rest_framework.response import Response
+from rest_framework import viewsets
 # Create your views here.
 
 @api_view(['POST'])
@@ -29,31 +31,34 @@ def register_user(request):
 @api_view(['POST'])
 def login_user(request):
     if request.method == 'POST':
-        username = request.data['username']
-        password = request.data['password']
+        username = request.data.get('username')
+        password = request.data.get('password')
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        if '@' in username:
-            try:
-                user = CustomUser.objects.get(email=username)
-                user = authenticate(request, username=user.username, password=password)
-            except ObjectDoesNotExist:
-                return Response({'message': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            user = authenticate(request, username=username, password=password)
-        if user:
-            refresh_token = RefreshToken.for_user(user)
-            access_token = AccessToken.for_user(user)
-            return Response({
-                'id': user.id,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'email': user.email,
-                'password': user.password,
-                'accessToken': str(access_token),
-                'refreshToken': str(refresh_token)
-            }, status=status.HTTP_200_OK)
-        return Response({'message': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
+        if not check_password(password, user.password):
+            return Response({'message': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh_token = RefreshToken.for_user(user)
+        access_token = AccessToken.for_user(user)
+
+        return Response({
+            'id': user.id,
+            'fullname': user.fullname,
+            'username': user.username,
+            'role': user.role,
+            'email': user.email,
+            'age': user.age,
+            'avatar': user.avatar,
+            'is_verified': user.is_verified,
+            'is_bhyt': user.is_bhyt,
+            'is_gplx': user.is_gplx,
+            'password': user.password,
+            'accessToken': str(access_token),
+            'refreshToken': str(refresh_token)
+        }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -132,3 +137,68 @@ def send_mail_page(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def generate_qr_code(cccd_card):
+    """
+    Hàm tạo QR code từ dữ liệu thẻ CCCD và trả về QR code dưới dạng nhị phân (image/png).
+    """
+    # Tạo dữ liệu để mã hóa vào QR code
+    data_to_encode = (
+        f"Số CCCD: {cccd_card.id}, Họ tên: {cccd_card.name}, "
+        f"Ngày Sinh: {cccd_card.dob}, Quốc tịch: {cccd_card.nationality}, "
+        f"Giới tính: {cccd_card.gender}, Ngày cấp: {cccd_card.issue_date}, "
+        f"Nơi cấp: {cccd_card.origin_place}, Ngày hết hạn: {cccd_card.expire_date}"
+    )
+
+    # Tạo QR code từ dữ liệu
+    qr = qrcode.make(data_to_encode)
+
+    # Lưu QR code vào bộ nhớ đệm
+    buffer = BytesIO()
+    qr.save(buffer, 'PNG')
+    buffer.seek(0)
+
+    # Trả về QR code dưới dạng nhị phân (Blob) trong response
+    return HttpResponse(buffer, content_type='image/png')
+
+@api_view(['GET'])
+def get_cccd_qrcode(request):
+    """
+    API để lấy thông tin thẻ CCCD và tạo QR code cho user_id cụ thể.
+    """
+    id_qrcode = request.query_params.get('id_qrcode', None)
+    if not id_qrcode:
+        return Response({"detail": "user_id không được cung cấp."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Tìm thẻ CCCD theo user_id
+        cccd_card = CCCDCard.objects.get(user_id=id_qrcode)
+    except CCCDCard.DoesNotExist:
+        return Response({"detail": "Không tìm thấy thẻ CCCD cho user_id này."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Gọi hàm để tạo QR code và trả về hình ảnh QR code
+    return generate_qr_code(cccd_card)
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user_id', None)
+
+        if user_id:
+            queryset = Notification.objects.filter(user_id=user_id)
+            if not queryset.exists():
+                raise NotFound(detail="Không tìm thấy thông tin cho id này.")
+        else:
+            queryset = Notification.objects.all()
+
+        sort_order = self.request.query_params.get('order', 'asc').lower()
+
+        if sort_order == 'asc':
+            queryset = queryset.order_by('-created_at')
+        elif sort_order == 'desc':
+            queryset = queryset.order_by('created_at')
+        else:
+            raise ValueError("Giá trị của 'order' phải là 'asc' hoặc 'desc'.")
+
+        return queryset

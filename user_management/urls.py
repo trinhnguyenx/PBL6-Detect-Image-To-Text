@@ -6,5 +6,6 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('api/', include('accounts.urls')),
-    path('api/v1/', include('cards.urls')),
+    path('api/v1/', include('card.urls')),
+
 ]
