@@ -16,15 +16,15 @@ class CCCDCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CCCDCard
-        fields = ['uuid','dob','nationality','id', 'name', 'gender', 'expire_date', 'type', 'origin_place', 'current_place','issue_date','user']
+        fields = ['uuid','dob','nationality','id', 'name', 'gender', 'expire_date', 'type', 'origin_place', 'current_place','issue_date','user','personal_identifi','is_valid','images','images_behind']
 
 class BHYTCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BHYTCard
-        fields = ['uuid','name', 'id', 'dob', 'gender','iplace', 'expire_date','ihos','type', 'user','issue_date']
+        fields = ['uuid','name', 'id', 'dob', 'gender','iplace', 'expire_date','ihos','type', 'user','issue_date','is_valid','images']
 
 class GPLXCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = GPLXCard
-        fields = ['uuid','name', 'dob', 'id', 'iplace', 'origin_place', 'issue_date','expire_date','nationality','level','type', 'user']
+        fields = ['uuid','name', 'dob', 'id', 'iplace', 'origin_place', 'issue_date','expire_date','nationality','level','type', 'user','is_valid','images']

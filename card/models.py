@@ -5,11 +5,13 @@ import uuid
 
 class CommonCard(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    id = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    dob = models.CharField(max_length=255)
-    expire_date = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
+    id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    dob = models.CharField(max_length=255, null=True, blank=True)
+    expire_date = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    is_valid = models.BooleanField(default=False)
+    images = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -19,11 +21,13 @@ class CommonCard(models.Model):
 
 
 class CCCDCard(CommonCard):
-    gender = models.CharField(max_length=255)
-    origin_place = models.CharField(max_length=255)
-    current_place = models.CharField(max_length=255)
-    issue_date = models.CharField(max_length=255)
-    nationality = models.CharField(max_length=255)
+    gender = models.CharField(max_length=255, null=True, blank=True)
+    origin_place = models.CharField(max_length=255, null=True, blank=True)
+    current_place = models.CharField(max_length=255, null=True, blank=True)
+    issue_date = models.CharField(max_length=255, null=True, blank=True)
+    nationality = models.CharField(max_length=255, null=True, blank=True)
+    personal_identifi = models.CharField(max_length=255, default='')
+    images_behind = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -38,11 +42,11 @@ class CCCDCard(CommonCard):
 
 
 class GPLXCard(CommonCard):
-    level = models.CharField(max_length=255)
-    iplace = models.CharField(max_length=255)
-    origin_place = models.CharField(max_length=255)
-    issue_date = models.CharField(max_length=255)
-    nationality = models.CharField(max_length=255)
+    level = models.CharField(max_length=255, null=True, blank=True)
+    iplace = models.CharField(max_length=255, null=True, blank=True)
+    origin_place = models.CharField(max_length=255, null=True, blank=True)
+    issue_date = models.CharField(max_length=255, null=True, blank=True)
+    nationality = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -58,10 +62,10 @@ class GPLXCard(CommonCard):
 
 
 class BHYTCard(CommonCard):
-    ihos = models.CharField(max_length=255)
-    gender = models.CharField(max_length=255)
-    iplace = models.CharField(max_length=255)
-    issue_date = models.CharField(max_length=255)
+    ihos = models.CharField(max_length=255, null=True, blank=True)
+    gender = models.CharField(max_length=255, null=True, blank=True)
+    iplace = models.CharField(max_length=255, null=True, blank=True)
+    issue_date = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

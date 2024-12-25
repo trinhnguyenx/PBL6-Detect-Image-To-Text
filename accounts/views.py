@@ -109,7 +109,6 @@ def get_me(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def send_mail_page(request):
     serializer = SendMailSerializer(data=request.data)
     if serializer.is_valid():
