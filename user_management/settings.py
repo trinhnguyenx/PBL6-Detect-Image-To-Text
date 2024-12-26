@@ -71,8 +71,10 @@ CELERY_BEAT_SCHEDULE = {
     'schedule-notification': {
         'task': 'accounts.tasks.schedule_notification',
         'schedule': 10.0,
-        # 'schedule': crontab(minute='*/1'),
-
+    },
+    'schedule-send-email': {
+        'task': 'accounts.tasks.send_expired_notification_emails',
+        'schedule': crontab(minute='*/1'),
     },
 }
 # CELERY_BEAT_SCHEDULE = {
