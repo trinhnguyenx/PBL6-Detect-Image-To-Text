@@ -24,7 +24,13 @@ def register_user(request):
     if request.method == 'POST':
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            Notification.objects.create(
+                title="Thông báo !",
+                description="Chào mừng bạn đến đến với ứng dụng của chúng tôi!",
+                user=user,
+                type="welcome",
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
