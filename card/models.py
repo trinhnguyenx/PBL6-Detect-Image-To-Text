@@ -26,7 +26,7 @@ class CCCDCard(CommonCard):
     current_place = models.CharField(max_length=255, null=True, blank=True)
     issue_date = models.CharField(max_length=255, null=True, blank=True)
     nationality = models.CharField(max_length=255, null=True, blank=True)
-    personal_identifi = models.CharField(max_length=255, default='')
+    personal_identifi = models.CharField(max_length=255, null=True, blank=True)
     images_behind = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         CustomUser,
